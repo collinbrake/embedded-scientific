@@ -13,26 +13,32 @@ d = 1/2./(x-1) - 1./(x-3/4) + 1./(x-1/4) - 1/2./x;
 
 % interpolating polynomial (n./d is 0/0-removable at node x = 0)
 p = n./d;
+p(x == 1) = 0;
+p(x == 3/4) = exp(-8/5);
+p(x == 1/4) = exp(-8/7);
 p(x == 0) = exp(-1);
 
 % 13 fitting points -> 12-order polynomial p12(x)
-nNodes = 14;
-xj = linspace(0, 1, nNodes);
+nNodes = 13;
+nOrder = nNodes - 1;
+j = 0:nOrder;
+% Chebyshev nodes on [-1, 1], mapped onto the domain [0, 1]
+xj = (1 - cos(j*pi/nOrder))/2;
 fj = exp(-1./(1 - xj.^2));
 fj(xj >= 1) = 0;
 
-% barycentric weights for equally spaced nodes: w_j = (-1)^j * nchoosek(n, j)
-nOrder = nNodes - 1;
-j = 0:nOrder;
-w = (-1).^j .* arrayfun(@(k) nchoosek(nOrder, k), j);
+% barycentric weights for chebyshev
+w = (-1).^j;
+w(1) = 1/2*w(1);
+w(nNodes) = 1/2*w(nNodes);
 
 % barycentric form of the interpolating polynomial
 p12 = zeros(size(x));
 for k = 1:numel(x)
     xk = x(k);
-    atNode = (xk == xj);
-    if any(atNode)
-        p12(k) = fj(atNode);
+    match = find(xk == xj, 1);
+    if ~isempty(match)
+        p12(k) = fj(match);
     else
         terms = w ./ (xk - xj);
         p12(k) = sum(terms .* fj) / sum(terms);
@@ -43,7 +49,7 @@ end
 error_p = p-f;
 error_p12 = p12-f;
 rms_p = sqrt(sum(error_p.^2)/length(x))
-rms_p13 = sqrt(sum((error_p13).^2)/length(x))
+rms_p12 = sqrt(sum((error_p12).^2)/length(x))
 
 % plot
 figure(1)
@@ -53,6 +59,6 @@ xlabel("x")
 legend("f(x)", "p_{3}(x)", "p_{12}(x)")
 
 subplot(2, 1, 2)
-plot(x, error_p, x, error_p13)
+plot(x, error_p, x, error_p12)
 xlabel("x")
 legend("Error p_{3}(x)", "Error p_{12}(x)")
