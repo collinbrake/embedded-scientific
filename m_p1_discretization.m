@@ -1,19 +1,17 @@
 % Parameters
 T = 500*10^-6
 
-% Euler
-He = tf([0, 0, 2*T^2],...
-            [1, -2+2*T, 1-2*T+2*T^2], T)
+% Euler - fixed point
+Ke = 2^21
+He = tf([0, 0, 0.125]/Ke, [1, -2, 1], T)
 
-% Tustin
-Htustin = tf([w0^2*T^2, 2*w0^2*T^2, w0^2*T^2],...
-                [4+w0^2*T^2+2*sqrt(2)*w0*T,...
-                    -8+2*w0^2*T^2, 4-2*sqrt(2)*w0*T+w0^2*T^2], T)
+% Tustin - fixed point
+Kt = 2^23
+Ht = tf([0.125, 0.25, 0.125]/Kt, [1, -2, 1], T)
 
 % Exact discretization with ZOH
 Hcontinuous = tf([2], [1, 2, 2]);
 Hexact = c2d(Hcontinuous, T)
-Ht = c2d(Hcontinuous, T, 'tustin')
 
 omega = linspace(0, pi, 1001);
 z = exp(1i.*omega);
@@ -24,10 +22,14 @@ Ytustin = response(omega, Ht);
 
 figure(1)
 subplot(2, 1, 1)
-plot(omega, abs(Yeuler), omega, abs(Ytustin), omega, abs(Yexact))
+plot(omega, 20*log10(abs(Yeuler)), omega, 20*log10(abs(Ytustin)), omega, 20*log10(abs(Yexact)))
+ylabel('Magnitude (dB)'); grid on
+legend('Euler, fixed-point', 'Tustin, fixed-point', 'Exact (ZOH)', 'Location', 'southwest')
 subplot(2, 1, 2)
-plot(omega, unwrap(angle(Yeuler)), omega, unwrap(angle(Ytustin)), omega,...
+plot(omega, unwrap(angle(Yeuler))-2*pi, omega, unwrap(angle(Ytustin)), omega,...
         unwrap(angle(Yexact)))
+xlabel('\omega (rad)'); ylabel('Phase (rad)'); grid on
+sgtitle('Problem 01 (G) - Frequency Responses')
 
 function Y = response(omega, H)
     n = H.Numerator{1};
