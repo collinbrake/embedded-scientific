@@ -31,15 +31,13 @@ Hc = KHc*Hc_unscaled;
 
 % ============================== (B) ================================== %
 
-T = 1 / (90*2*10^3) % sampling frequency has to be at least double 2kHz signal
+T = 1 / (12*2*10^3) % sampling frequency has to be at least double 2kHz signal
 
 Hd = c2d(Hc, T, 'Tustin')
 
-Hd_exact = c2d(Hc, T);
-
 % ========================= Responses ================================= %
 
-OMEGA = linspace(0, pi, 1000001); % normalized digital frequency [0, pi]
+OMEGA = linspace(0, pi, 100001); % normalized digital frequency [0, pi]
 omega = OMEGA/T;                % continuous frequency [0, pi/T]
 sFreq = 1i.*omega;
 zFreq = exp(1i.*OMEGA);
@@ -48,67 +46,52 @@ zMat = [zFreq.^4; zFreq.^3; zFreq.^2; zFreq.^1; zFreq.^0];
 
 nc = Hc.Numerator{1};
 dc = Hc.Denominator{1};
-Yc = (nc*sMat) ./ (dc*sMat);
+Yexact = (nc*sMat) ./ (dc*sMat);
 
 nd = Hd.Numerator{1};
 dd = Hd.Denominator{1};
 Yd = (nd*zMat) ./ (dd*zMat);
 
-nd = Hd_exact.Numerator{1};
-dd = Hd_exact.Denominator{1};
-Yd_exact = (nd*zMat) ./ (dd*zMat);
-
-Yerror_norm = abs(Yd_exact - Yd) / max(abs(Yd_exact));
+Yerror_norm = abs(Yexact - Yd) / max(abs(Yexact));
 
 % (B) - not for report, just to iterate on sample time T
 figure(1)
-subplot(3, 1, 1)
-semilogx(omega, 20*log10(abs(Yd)), omega, 20*log10(abs(Yd_exact)))
-xlabel('rad/s'); ylabel('Magnitude (dB)'); grid on
-legend('H_d(s)', 'H_d_e_x_a_c_t(z)', 'Location', 'southwest')
-title('Magnitude Response (dB)')
-subplot(3, 1, 2)
-semilogx(omega, unwrap(angle(Yd)), omega, unwrap(angle(Yd_exact)))
-xlabel('rad/s'); ylabel('Phase (rad)'); grid on
-legend('H_d(s)', 'H_d_e_x_a_c_t(z)', 'Location', 'southwest')
-title('Phase Response (rad)')
-subplot(3, 1, 3)
 semilogx(omega, abs(Yerror_norm*100))
 xlabel('rad/s'); ylabel('Magnitude Error (%)'); grid on
-title('Magnitude Response Error (%)')
-sgtitle('Project (1) - Frequency Response of 4th-order Butterworth Filter (Discrete Time)')
+subtitle(["Tustin: H_d(e^{i\Omega})", "Exactly-mapped: H_{d,exact}(e^{i\Omega}) == H_c(i\Omega/T)"])
+title('Project (1) - Normalized Magnitude Response Error Between Exactly-Mapped and Tustin Approximation')
 
 % (E) - unitless, with phase
 figure(2)
 subplot(2, 1, 1)
-semilogx(omega, abs(Yc), ...
+semilogx(omega, abs(Yexact), ...
     'Color', [0.15, 0.25, 0.55], 'LineWidth', 2.2, 'LineStyle', '-');
 hold on;
 semilogx(omega, abs(Yd), ...
     'Color', [0.95, 0.60, 0.20], 'LineWidth', 1.8, 'LineStyle', '--');
 hold off;
 xlabel('rad/s'); ylabel('Magnitude (Unitless)'); grid on
-legend('|H_c(i\omega)|', '|H_d(e^i^\Omega)|', 'Location', 'southwest')
+legend('|H_c(i\Omega/T)|', '|H_d(e^i^\Omega)|', 'Location', 'southwest')
 
 subplot(2, 1, 2)
-semilogx(omega, unwrap(angle(Yc)), ...
+semilogx(omega, unwrap(angle(Yexact)), ...
     'Color', [0.15, 0.25, 0.55], 'LineWidth', 2.2, 'LineStyle', '-');
 hold on;
-semilogx(omega(1:end-100), unwrap(angle(Yd(1:end-100))), ...
+semilogx(omega(1:end-10), unwrap(angle(Yd(1:end-10))), ...
     'Color', [0.95, 0.60, 0.20], 'LineWidth', 1.8, 'LineStyle', '--');
 hold off;
 xlabel('rad/s'); ylabel('Phase (rad)'); grid on
-legend([char(8736) 'H_c(i\omega)'], [char(8736) 'H_d(e^i^\Omega)'], 'Location', 'southwest')
+legend('\angle H_c(i\Omega/T)', '\angle H_d(e^{i\Omega})', 'Location', 'southwest');
 sgtitle('Project (1) - Frequency Response of 4th-order Butterworth Filter (Continuous Time versus Discrete Time)')
 
 % (E) - dB
 figure(3)
-semilogx(omega, 20*log10(abs(Yc)), ...
+semilogx(omega, 20*log10(abs(Yexact)), ...
     'Color', [0.15, 0.25, 0.55], 'LineWidth', 2.2, 'LineStyle', '-');
 hold on;
-semilogx(omega, 20*log10(abs(Yd)), ...
+semilogx(omega, 20*log10(abs(Yexact)), ...
     'Color', [0.95, 0.60, 0.20], 'LineWidth', 1.8, 'LineStyle', '--');
 hold off;
 xlabel('rad/s'); ylabel('Magnitude (dB)'); grid on
-legend('20*log10|H_c(i\omega)|', '20*log10|H_d(e^i^\Omega)|', 'Location', 'southwest')
+legend('20*log10|H_c(i\Omega/T)|', '20*log10|H_d(e^i^\Omega)|', 'Location', 'southwest')
 sgtitle('Project (1) - Frequency Response of 4th-order Butterworth Filter (Continuous Time versus Discrete Time)')
