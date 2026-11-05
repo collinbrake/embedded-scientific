@@ -1,15 +1,16 @@
-#define PATTERN 0xB97AE000;
-
 struct w
 {
-    signed short zn1;
-    signed short zn2;
+    float zn1;
+    float zn2;
 };
 
 static struct w w;
 
-signed short hbar(signed short u)
+float hbar(float u)
 {
-    signed short wCurrent = -103*w.zn1 - 42*w.zn2 + u;
-    return 64*wCurrent + 128*w.zn1 + 64*w.zn2;
+    float wCurrent = -1.609375*w.zn1 - 0.658441*w.zn2 + u;
+    float y = wCurrent + 2*w.zn1 + w.zn2;
+    w.zn2 = w.zn1;
+    w.zn1 = wCurrent;
+    return y;
 }
