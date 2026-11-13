@@ -112,3 +112,65 @@ Apar = inv(Ppar) * A * Ppar
 Bpar = inv(Ppar) * B
 Cpar = C*Ppar
 Dpar = D
+
+% ============================== (I) ================================== %
+
+% Parallel as possible - implemented in fixed point [16, -10]
+% representation
+
+K = 1000;
+Pbar = Ppar*K;
+
+A_inf = inv(Pbar) * A * Pbar;
+B_inf = inv(Pbar) * B;
+C_inf = C*Pbar;
+D_inf = D;
+
+% Scale factor for [16, -10] fixed-point representation
+scale = 2^10; % 1024
+
+% Direct round-to-nearest fixed-point conversion
+Abar = round(A_inf * scale) / scale;
+Bbar = round(B_inf * scale) / scale;
+Cbar = round(C_inf * scale) / scale;
+Dbar = 1 / scale; % truncates to zero
+
+% Display quantized matrices
+disp('Abar:'); disp(Abar);
+disp('Bbar:'); disp(Bbar);
+disp('Cbar:'); disp(Cbar);
+disp('Dbar:'); disp(Dbar);
+
+% ============================== (J) ================================== %
+% Eigenvalues of approximated Abar in polar form
+lambda_bar = eig(Abar);
+rho_bar = abs(lambda_bar);
+theta_bar = angle(lambda_bar);
+
+polar_form_bar = compose('%.6f * exp(i * %.5f)', rho_bar, theta_bar);
+T_J = table(polar_form_bar, 'VariableNames', {'Approximated_Polar_Form'});
+disp(T_J)
+
+% ============================== (K) ================================== %
+% Distance d_bar between each approximated eigenvalue and the unit circle
+d_bar = abs(1 - rho_bar);
+
+T_K = table(polar_form_bar, d_bar, 'VariableNames', {'Polar_Form_Bar', 'Distance_d_bar'});
+disp(T_K)
+
+% ============================== (L) ================================== %
+% Relative movement of each eigenvalue: X = |d_l - d_bar_l| / d_l
+% (Sort both sets by real/imag parts to ensure matching pairs)
+[~, idx_orig] = sort(real(lambda) + imag(lambda));
+[~, idx_bar]  = sort(real(lambda_bar) + imag(lambda_bar));
+
+d_sorted     = d(idx_orig);
+d_bar_sorted = d_bar(idx_bar);
+
+X = abs(d_sorted - d_bar_sorted) ./ d_sorted;
+X_pct = X * 100;
+
+for l = 1:length(X)
+    fprintf('eigenvalue lambda_%d moved a total of %.4f%% of the distance between lambda_%d and the unit circle.\n', ...
+        l, X_pct(l), l);
+end
